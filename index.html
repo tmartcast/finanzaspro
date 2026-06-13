@@ -1053,10 +1053,26 @@ function doLogin(){
   const em=$('lin-email').value.trim(),pw=$('lin-pw').value;
   if(!em||!pw){showErr('Completa todos los campos.');return;}
   hideErr();
-  auth.signInWithEmailAndPassword(em,pw).catch(e=>{
-    const m={'auth/user-not-found':'Usuario no encontrado.','auth/wrong-password':'Contraseña incorrecta.','auth/invalid-email':'Email inválido.','auth/too-many-requests':'Demasiados intentos. Espera.','auth/invalid-credential':'Credenciales inválidas.'};
-    showErr(m[e.code]||'Error: '+e.message);
-  });
+  showBusy('Conectando con Firebase Auth...');
+  auth.signInWithEmailAndPassword(em,pw)
+    .then(r=>{
+      console.log('[FP] Auth OK uid='+r.user.uid);
+      showBusy('Autenticado. Cargando perfil...');
+    })
+    .catch(e=>{
+      hideBusy();
+      console.error('[FP] Auth FAIL:',e.code,e.message);
+      const m={
+        'auth/user-not-found':'Usuario no encontrado.',
+        'auth/wrong-password':'Contraseña incorrecta.',
+        'auth/invalid-email':'Email inválido.',
+        'auth/too-many-requests':'Demasiados intentos. Espera unos minutos.',
+        'auth/invalid-credential':'Credenciales inválidas. Verifica email y contraseña.',
+        'auth/network-request-failed':'Sin conexión. Verifica tu internet.',
+        'auth/too-many-requests':'Cuenta bloqueada temporalmente por intentos fallidos.'
+      };
+      showErr(m[e.code]||'Error ['+e.code+']: '+e.message);
+    });
 }
 
 async function doRegister(){
@@ -1093,20 +1109,10 @@ function showBusy(msg){
 function hideBusy(){const ov=$('busy-overlay');if(ov)ov.style.display='none';}
 function showFatalErr(msg){
   hideBusy();
-  const d=document.createElement('div');
-  d.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:99999;display:flex;align-items:center;justify-content:center;padding:1rem';
-  d.innerHTML=`<div style="background:#0d1829;border:2px solid #f87171;border-radius:18px;padding:1.5rem;max-width:420px;width:100%;box-shadow:0 24px 56px rgba(0,0,0,.5)">
-    <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1rem">
-      <div style="width:36px;height:36px;border-radius:50%;background:rgba(248,113,113,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fa-solid fa-triangle-exclamation" style="color:#f87171"></i></div>
-      <h3 style="margin:0;color:#f87171;font-family:'Sora',sans-serif;font-size:1rem">Error de acceso</h3>
-    </div>
-    <pre style="white-space:pre-wrap;font-family:'Plus Jakarta Sans',sans-serif;font-size:.82rem;color:#a8bbd8;margin:0 0 1rem;line-height:1.5">${msg}</pre>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-      <button onclick="this.closest('div[style]').remove();doLogout()" style="padding:.65rem;border-radius:10px;border:1.5px solid #4a6080;background:transparent;color:#a8bbd8;font-weight:700;cursor:pointer;font-family:inherit;font-size:.82rem">Cerrar sesión</button>
-      <button onclick="this.closest('div[style]').remove()" style="padding:.65rem;border-radius:10px;border:none;background:linear-gradient(135deg,#4f46e5,#818cf8);color:#fff;font-weight:700;cursor:pointer;font-family:inherit;font-size:.82rem">Reintentar</button>
-    </div>
-  </div>`;
-  document.body.appendChild(d);
+  console.error('[FP] FATAL:',msg);
+  // alert() funciona siempre, sin depender de DOM ni CSS
+  alert('⚠️ FinanzasPro — Error\n\n'+msg);
+  showErr(msg.split('\n')[0].slice(0,120));
 }
 function showLogin(){$('login-screen').style.display='flex';$('app').style.display='none';}
 
