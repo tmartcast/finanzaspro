@@ -897,6 +897,13 @@ firebase.initializeApp({
 });
 const auth=firebase.auth();
 const db=firebase.firestore();
+// Fuerza HTTP long-polling en vez de WebSockets (fix para redes que bloquean WS)
+db.settings({experimentalForceLongPolling:true,merge:true});
+// Persistencia local para funcionamiento offline
+db.enablePersistence({synchronizeTabs:true}).catch(e=>{
+  if(e.code==='failed-precondition'){console.warn('[FP] Multi-tab: persistence desactivada');}
+  else{console.warn('[FP] Persistence no soportada:',e.code);}
+});
 const FST=firebase.firestore.FieldValue.serverTimestamp;
 
 // ═══════════════════════════════════════════════════
